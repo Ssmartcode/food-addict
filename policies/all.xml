@@ -1,0 +1,41 @@
+<policies>
+    <inbound>
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <return-response>
+            <set-status code="@(context.Response.StatusCode)" reason="Error" />
+            <set-header name="Content-Type" exists-action="override">
+                <value>application/json</value>
+            </set-header>
+            <set-body>@{
+                var reason = context.LastError.Reason;
+                var message = context.LastError.Message;
+                var errorBody = new JObject();
+
+                if(reason == "ContentInvalid"){
+                    var validationErrors = context.Variables["validationErrors"] as JObject;
+                    errorBody.Add("reason", "The body is invalid.");
+                    errorBody.Add("message", "Please check the api specification.");
+                    errorBody.Add("errorDetails", validationErrors);
+                } else if (reason == "ContentTypeNotDefined"){
+                    errorBody.Add("reason", "Wrong content type.");
+                    errorBody.Add("message", "Please check the api specification for the right content type.");
+                }
+                else{
+                    errorBody.Add("reason", context.LastError.Reason);
+                    errorBody.Add("message", context.LastError.Message);
+                }
+               
+                return errorBody.ToString();
+            }</set-body>
+        </return-response>
+        <base />
+    </on-error>
+</policies>

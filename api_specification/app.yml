@@ -1,0 +1,69 @@
+openapi: 3.0.1
+info:
+  title: FoodAddict
+  description: 'FoodAddict Openapi specification for the app back-end'
+  version: '1.0'
+paths:
+  /restaurant/{restaurantId}:
+    get:
+      summary: get restaurant inforamation
+      description: get restaurant inforamation such as image, location etc...
+      operationId: getRestaurant
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          description: the id associated to the restaurant
+          schema:
+            type: string
+            pattern: ^[\d]{5,8}$
+      responses:
+        '200':
+          description: "Get the restaurant informations"
+
+  /restaurant:
+    post:
+      summary: post restaurant inforamation
+      description: add restaurant inforamation such as image, location etc...
+      operationId: postRestaurant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestaurantBody'
+      responses:
+        '204':
+          description: "Information added"
+
+components:
+  schemas:
+    RestaurantBody:
+      type: object
+      properties:
+        name: 
+          type: string
+        type:
+          type: string
+          enum: 
+            - vegetarian
+            - sweets
+            - meat
+            - traditional
+            - custom
+      required:
+        - name
+        - type
+
+  securitySchemes:
+    apiKeyHeader:
+      type: apiKey
+      name: Ocp-Apim-Subscription-Key
+      in: header
+    apiKeyQuery:
+      type: apiKey
+      name: subscription-key
+      in: query
+security:
+  - apiKeyHeader: []
+  - apiKeyQuery: []

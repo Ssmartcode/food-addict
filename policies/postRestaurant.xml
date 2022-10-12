@@ -1,0 +1,58 @@
+<policies>
+    <inbound>
+        <validate-content unspecified-content-type-action="prevent" max-size="102400" size-exceeded-action="prevent" errors-variable-name="validationErrors">
+            <content-type-map missing-content-type-value="application/json">
+                <type from="application/hal+json" to="application/json" />
+            </content-type-map>
+            <content type="application/json" validate-as="json" action="prevent" />
+        </validate-content>
+        <set-variable name="restaurantName" value="@(context.Request.Body.As<JObject>(preserveContent: true).GetValueOrDefault("name", ""))" />
+        <set-variable name="restaurantType" value="@(context.Request.Body.As<JObject>(preserveContent: true).GetValueOrDefault("type", ""))" />
+        <return-response>
+            <set-status code="200" reason="OK" />
+            <set-header name="Content-Type" exists-action="override">
+                <value>application/json</value>
+            </set-header>
+            <set-body template="liquid">
+                {
+                    "restaurantName": "{{context.Variables["restaurantName"]}}",
+                    "restaurantType": "{{context.Variables["restaurantType"]}}"
+                }
+            </set-body>
+        </return-response>
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <return-response>
+            <set-status code="@(context.Response.StatusCode)" reason="Error" />
+            <set-header name="Content-Type" exists-action="override">
+                <value>application/json</value>
+            </set-header>
+            <set-body>@{
+                var reason = context.LastError.Reason;
+                var message = context.LastError.Message;
+                var errorBody = new JObject();
+
+
+                if(reason == "ContentInvalid"){
+                    var validationErrors = context.Variables["validationErrors"] as JObject;
+                    errorBody.Add("reason", "The body is invalid.");
+                    errorBody.Add("message", "Please check the api specification.");
+                    errorBody.Add("errorDetails", validationErrors);
+                }else{
+                    errorBody.Add("reason", context.LastError.Reason);
+                    errorBody.Add("message", context.LastError.Message);
+                }
+               
+                return errorBody.ToString();
+            }</set-body>
+        </return-response>
+        <base />
+    </on-error>
+</policies>
